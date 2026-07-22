@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+app_path="${MDVIEW_APP_PATH:-/Applications/mdview.app}"
+
+if [ ! -d "$app_path" ]; then
+  echo "mdview: application not found at $app_path" >&2
+  exit 1
+fi
+
+exec /usr/bin/open -a "$app_path" "$@"

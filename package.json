@@ -2,12 +2,14 @@
   "name": "mdview",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run --environment jsdom",
     "preview": "vite preview",
+    "package:macos": "npm run tauri build && sh scripts/build-macos-pkg.sh",
     "tauri": "tauri"
   },
   "dependencies": {

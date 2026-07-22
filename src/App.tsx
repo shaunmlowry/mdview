@@ -223,19 +223,13 @@ function App() {
     const cleanups: Array<() => void> = [];
 
     async function initializeDesktop() {
-      try {
-        const initialDocument = await invoke<OpenDocument | null>("initial_document");
-        if (!disposed && initialDocument) {
-          setOpenDocument(initialDocument);
-          setSource(initialDocument.contents);
-          setSavedSource(initialDocument.contents);
-        }
-      } catch (error) {
-        if (!disposed) setNotice(error instanceof Error ? error.message : String(error));
-      } finally {
-        if (!disposed) setIsBusy(false);
-      }
-
+      const unlistenOpen = await listen<OpenDocument>("open-document", ({ payload }) => {
+        setOpenDocument(payload);
+        setSource(payload.contents);
+        setSavedSource(payload.contents);
+        setEditorVisible(false);
+        setIsBusy(false);
+      });
       const unlistenMenu = await listen<string>("menu-action", ({ payload }) => {
         menuActionRef.current(payload);
       });
@@ -252,10 +246,24 @@ function App() {
       });
 
       if (disposed) {
+        unlistenOpen();
         unlistenMenu();
         unlistenDrop();
-      } else {
-        cleanups.push(unlistenMenu, unlistenDrop);
+        return;
+      }
+      cleanups.push(unlistenOpen, unlistenMenu, unlistenDrop);
+
+      try {
+        const initialDocument = await invoke<OpenDocument | null>("initial_document");
+        if (!disposed && initialDocument) {
+          setOpenDocument(initialDocument);
+          setSource(initialDocument.contents);
+          setSavedSource(initialDocument.contents);
+        }
+      } catch (error) {
+        if (!disposed) setNotice(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (!disposed) setIsBusy(false);
       }
     }
 

@@ -3,6 +3,7 @@ name = "mdview"
 version = "0.1.0"
 description = "A focused desktop Markdown viewer and editor"
 authors = ["Shaun Lowry"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

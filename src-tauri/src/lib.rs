@@ -2,19 +2,23 @@ use serde::Serialize;
 use std::{
     env, fs,
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
-    Emitter,
+    Emitter, Manager, RunEvent, State,
 };
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct DocumentPayload {
     path: String,
     name: String,
     contents: String,
 }
+
+#[derive(Default)]
+struct PendingDocument(Mutex<Option<DocumentPayload>>);
 
 fn load_document(path: &Path) -> Result<DocumentPayload, String> {
     if !path.is_file() {
@@ -48,7 +52,18 @@ fn is_markdown(path: &Path) -> bool {
 }
 
 #[tauri::command]
-fn initial_document() -> Result<Option<DocumentPayload>, String> {
+fn initial_document(
+    pending: State<'_, PendingDocument>,
+) -> Result<Option<DocumentPayload>, String> {
+    if let Some(document) = pending
+        .0
+        .lock()
+        .map_err(|_| "Could not access the pending document".to_owned())?
+        .take()
+    {
+        return Ok(Some(document));
+    }
+
     env::args_os()
         .skip(1)
         .map(PathBuf::from)
@@ -69,7 +84,8 @@ fn write_document(path: String, contents: String) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
+        .manage(PendingDocument::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -112,6 +128,26 @@ pub fn run() {
             read_document,
             write_document
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running mdview");
+        .build(tauri::generate_context!())
+        .expect("error while building mdview");
+
+    app.run(|app, event| {
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+        if let RunEvent::Opened { urls } = event {
+            let Some(path) = urls
+                .into_iter()
+                .filter_map(|url| url.to_file_path().ok())
+                .find(|path| path.is_file() && is_markdown(path))
+            else {
+                return;
+            };
+
+            if let Ok(document) = load_document(&path) {
+                if let Ok(mut pending) = app.state::<PendingDocument>().0.lock() {
+                    *pending = Some(document.clone());
+                }
+                let _ = app.emit("open-document", document);
+            }
+        }
+    });
 }

@@ -10,6 +10,7 @@ A focused Tauri desktop app for reading, editing, and exporting Markdown. Mermai
 - Save source changes with `Cmd/Ctrl+S`.
 - Export self-contained rendered HTML with Mermaid diagrams already converted to SVG.
 - Export PDF through the platform print dialog and its **Save as PDF** destination.
+- Install a `mdview` terminal command with the macOS package installer.
 
 ## Development
 
@@ -32,6 +33,23 @@ Run the web surface alone at `http://localhost:1420`:
 npm run dev
 ```
 
+## macOS package
+
+Build an installer that places the app in `/Applications` and the `mdview` command in `/usr/local/bin`:
+
+```sh
+npm run package:macos
+open src-tauri/target/release/bundle/pkg/mdview_0.1.0_arm64.pkg
+```
+
+After installation, open Markdown from any shell without waiting for the desktop app to exit:
+
+```sh
+mdview README.md
+```
+
+The DMG remains available for drag-and-drop app installation, but only the PKG installs the command-line launcher.
+
 ## Verification
 
 ```sh
@@ -39,6 +57,7 @@ npm test
 npm run build
 cargo check --manifest-path src-tauri/Cargo.toml
 npm run tauri build
+npm run package:macos
 ```
 
 ## Shortcuts
