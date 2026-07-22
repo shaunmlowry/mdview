@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="180" y1="120" x2="850" y2="920" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2d7a58"/>
+      <stop offset="1" stop-color="#123a29"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="260" y1="180" x2="760" y2="850" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#edf3ef"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="34" stdDeviation="34" flood-color="#071e15" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#background)"/>
+  <path d="M162 742C278 846 412 886 578 878C718 872 832 822 902 734V872C902 900 880 922 852 922H236C195 922 162 889 162 848Z" fill="#0c2e20" opacity="0.3"/>
+  <rect x="82" y="82" width="860" height="860" rx="207" fill="none" stroke="#76b495" stroke-opacity="0.32" stroke-width="12"/>
+
+  <path d="M286 164H646L816 334V792C816 837 779 874 734 874H286C241 874 204 837 204 792V246C204 201 241 164 286 164Z" fill="#09271b" opacity="0.38" transform="translate(0 12)" filter="url(#shadow)"/>
+  <path d="M286 154H646L816 324V782C816 827 779 864 734 864H286C241 864 204 827 204 782V236C204 191 241 154 286 154Z" fill="url(#paper)"/>
+  <path d="M646 154V266C646 298 672 324 704 324H816Z" fill="#f09a78"/>
+  <path d="M646 154L816 324H704C672 324 646 298 646 266Z" fill="#d9674c" opacity="0.24"/>
+
+  <g fill="none" stroke="#236c4b" stroke-linecap="round" stroke-width="42">
+    <path d="M336 288L316 474"/>
+    <path d="M430 288L410 474"/>
+    <path d="M284 350H462"/>
+    <path d="M272 418H450"/>
+  </g>
+
+  <path d="M326 624C378 624 400 694 458 694C516 694 534 624 594 624" fill="none" stroke="#8bbda5" stroke-linecap="round" stroke-width="28"/>
+  <circle cx="316" cy="624" r="42" fill="#236c4b"/>
+  <circle cx="458" cy="694" r="42" fill="#e57859"/>
+  <circle cx="604" cy="624" r="42" fill="#236c4b"/>
+  <circle cx="316" cy="624" r="13" fill="#f8faf8"/>
+  <circle cx="458" cy="694" r="13" fill="#f8faf8"/>
+  <circle cx="604" cy="624" r="13" fill="#f8faf8"/>
+</svg>
