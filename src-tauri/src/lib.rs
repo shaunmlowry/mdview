@@ -82,6 +82,39 @@ fn write_document(path: String, contents: String) -> Result<(), String> {
     fs::write(&path, contents).map_err(|error| format!("Could not write {path}: {error}"))
 }
 
+#[tauri::command]
+fn print_document(window: tauri::WebviewWindow) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        window
+            .with_webview(|webview| unsafe {
+                use objc2_app_kit::{NSPrintInfo, NSWindow};
+                use objc2_web_kit::WKWebView;
+
+                let view: &WKWebView = &*webview.inner().cast();
+                let native_window: &NSWindow = &*webview.ns_window().cast();
+                let print_info = NSPrintInfo::sharedPrintInfo();
+                let print_operation = view.printOperationWithPrintInfo(&print_info);
+
+                print_operation.setCanSpawnSeparateThread(true);
+                print_operation.runOperationModalForWindow_delegate_didRunSelector_contextInfo(
+                    native_window,
+                    None,
+                    None,
+                    std::ptr::null_mut(),
+                );
+            })
+            .map_err(|error| format!("Could not open the print dialog: {error}"))?;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    window
+        .eval("window.print()")
+        .map_err(|error| format!("Could not open the print dialog: {error}"))?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -126,7 +159,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             initial_document,
             read_document,
-            write_document
+            write_document,
+            print_document
         ])
         .build(tauri::generate_context!())
         .expect("error while building mdview");

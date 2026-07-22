@@ -184,10 +184,15 @@ function App() {
   async function exportPdf() {
     if (!openDocument || !(await waitForDiagrams())) return;
 
-    const cleanup = () => document.documentElement.classList.remove("is-printing");
-    document.documentElement.classList.add("is-printing");
-    window.addEventListener("afterprint", cleanup, { once: true });
-    window.requestAnimationFrame(() => window.print());
+    try {
+      if (isTauri()) {
+        await invoke("print_document");
+      } else {
+        window.print();
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    }
   }
 
   function handleMenuAction(action: string) {
