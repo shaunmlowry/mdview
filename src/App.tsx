@@ -24,6 +24,7 @@ import "./App.css";
 import MarkdownPreview, { RenderState } from "./MarkdownPreview";
 import { isMarkdownPath, resolveLocalPath } from "./lib/links";
 import { createStandaloneHtml } from "./lib/markdown";
+import { registerVimFilterOperator, registerVimWriteCommand } from "./lib/vim";
 import "./markdown.css";
 
 interface OpenDocument {
@@ -48,6 +49,9 @@ function App() {
   const [renderState, setRenderState] = useState<RenderState>({ errors: 0, pending: 0 });
   const previewRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const filterTextRef = useRef<(command: string, input: string) => Promise<string>>(() =>
+    Promise.reject(new Error("Shell filters are available in the desktop app.")),
+  );
   const menuActionRef = useRef<(action: string) => void>(() => undefined);
   const openPathRef = useRef<(path: string) => void>(() => undefined);
   const dirtyRef = useRef(false);
@@ -213,6 +217,21 @@ function App() {
 
   menuActionRef.current = handleMenuAction;
   openPathRef.current = openPath;
+  filterTextRef.current = (command, input) => {
+    if (!isTauri()) {
+      return Promise.reject(new Error("Shell filters are available in the desktop app."));
+    }
+
+    return invoke<string>("filter_text", { command, input, path: openDocument?.path });
+  };
+
+  useEffect(() => {
+    registerVimWriteCommand(() => menuActionRef.current("save"));
+    registerVimFilterOperator(
+      (command, input) => filterTextRef.current(command, input),
+      setNotice,
+    );
+  }, []);
 
   useEffect(() => {
     if (!isTauri()) {

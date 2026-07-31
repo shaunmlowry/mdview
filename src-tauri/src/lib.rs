@@ -2,8 +2,11 @@ use serde::Serialize;
 use std::{
     collections::HashMap,
     env, fs,
+    io::Write,
     path::{Path, PathBuf},
+    process::{Command, Stdio},
     sync::Mutex,
+    thread,
 };
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder, WINDOW_SUBMENU_ID},
@@ -263,6 +266,60 @@ fn create_blank_window(app: &AppHandle) -> Result<(), String> {
     focus_window(app, &label)
 }
 
+fn run_filter_command(
+    command: &str,
+    input: &str,
+    document_path: Option<&str>,
+) -> Result<String, String> {
+    if command.trim().is_empty() {
+        return Err("Filter command cannot be empty".to_owned());
+    }
+
+    let mut process = Command::new("/bin/zsh");
+    process
+        .args(["-lc", command])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    if let Some(directory) = document_path
+        .and_then(|path| Path::new(path).parent())
+        .filter(|directory| !directory.as_os_str().is_empty())
+    {
+        process.current_dir(directory);
+    }
+
+    let mut child = process
+        .spawn()
+        .map_err(|error| format!("Could not run filter command: {error}"))?;
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| "Could not open filter command stdin".to_owned())?;
+    let input = input.as_bytes().to_vec();
+    let writer = thread::spawn(move || stdin.write_all(&input));
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("Could not read filter command output: {error}"))?;
+
+    writer
+        .join()
+        .map_err(|_| "Could not send text to filter command".to_owned())?
+        .map_err(|error| format!("Could not send text to filter command: {error}"))?;
+
+    if !output.status.success() {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(if detail.is_empty() {
+            format!("Filter command exited with {}", output.status)
+        } else {
+            detail
+        });
+    }
+
+    String::from_utf8(output.stdout)
+        .map_err(|error| format!("Filter command returned invalid UTF-8: {error}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -327,6 +384,21 @@ mod tests {
         assert_eq!(registry.next_label(), "document-1");
         assert_eq!(registry.next_label(), "document-2");
     }
+
+    #[test]
+    fn filter_commands_transform_stdin_to_stdout() {
+        let output = run_filter_command("tr '[:lower:]' '[:upper:]'", "hello\n", None).unwrap();
+
+        assert_eq!(output, "HELLO\n");
+    }
+
+    #[test]
+    fn filter_command_failures_return_stderr() {
+        let error =
+            run_filter_command("echo formatter-failed >&2; exit 1", "input", None).unwrap_err();
+
+        assert_eq!(error, "formatter-failed");
+    }
 }
 
 #[tauri::command]
@@ -357,6 +429,19 @@ fn open_document(path: String, window: WebviewWindow, app: AppHandle) -> Result<
 #[tauri::command]
 fn write_document(path: String, contents: String) -> Result<(), String> {
     fs::write(&path, contents).map_err(|error| format!("Could not write {path}: {error}"))
+}
+
+#[tauri::command]
+async fn filter_text(
+    command: String,
+    input: String,
+    path: Option<String>,
+) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        run_filter_command(&command, &input, path.as_deref())
+    })
+    .await
+    .map_err(|error| format!("Could not complete filter command: {error}"))?
 }
 
 #[tauri::command]
@@ -472,6 +557,7 @@ pub fn run() {
             initial_document,
             open_document,
             write_document,
+            filter_text,
             print_document
         ])
         .build(tauri::generate_context!())
