@@ -206,6 +206,25 @@ button:focus-visible {
   border-left-color: #f1b99f;
 }
 
+.source-editor .vim-command-prompt {
+  align-items: center;
+  color: #91ae9f;
+  display: flex;
+  font-family: "IBM Plex Mono", monospace;
+  gap: 4px;
+  padding: 3px 8px;
+}
+
+.source-editor .vim-command-prompt input {
+  background: transparent;
+  border: 0;
+  color: #e2e8e5;
+  flex: 1;
+  font: inherit;
+  outline: 0;
+  padding: 0;
+}
+
 .source-editor .cm-selectionBackground,
 .source-editor .cm-content ::selection {
   background: #3f5f50 !important;
