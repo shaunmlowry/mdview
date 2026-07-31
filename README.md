@@ -4,9 +4,10 @@ A focused Tauri desktop app for reading, editing, and exporting Markdown. Mermai
 
 ## Features
 
-- Open Markdown from the command line, native **File -> Open** menu, toolbar, or drag and drop.
-- Render tables, task lists, syntax-highlighted code, raw HTML, local images, and Mermaid diagrams.
+- Open Markdown in independent windows from the command line, Finder, native **File -> Open** menu, toolbar, or drag and drop.
+- Render tables, task lists, footnotes, syntax-highlighted code, raw HTML, local images, and Mermaid diagrams.
 - Keep the editor hidden by default or toggle a side-by-side CodeMirror editor with Vim bindings.
+- Copy selected rendered text and use standard clipboard commands in the editor.
 - Save source changes with `Cmd/Ctrl+S`.
 - Export self-contained rendered HTML with Mermaid diagrams already converted to SVG.
 - Export PDF through the platform print dialog and its **Save as PDF** destination.
@@ -67,5 +68,7 @@ npm run package:macos
 | Open | `Cmd/Ctrl+O` |
 | Save Markdown | `Cmd/Ctrl+S` |
 | Toggle editor | `Cmd/Ctrl+E` |
+| Copy | `Cmd/Ctrl+C` |
+| Paste in editor | `Cmd/Ctrl+V` |
 
 In the editor, press `i` to enter Vim insert mode and `Esc` to return to normal mode.

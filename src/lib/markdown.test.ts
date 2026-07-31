@@ -24,6 +24,19 @@ flowchart LR
     expect(result).not.toContain("<script");
   });
 
+  it("renders named footnotes and backlinks", () => {
+    const result = renderMarkdown(`First claim[^policy] and second claim[^policy].
+
+[^policy]: Policy details with a [source](https://example.com).`);
+
+    expect(result).toContain('class="footnote-ref"');
+    expect(result).toContain('href="#fn1"');
+    expect(result).toContain('id="fn1"');
+    expect(result).toContain('class="footnote-backref"');
+    expect(result).toContain('href="https://example.com"');
+    expect(result).not.toContain("[^policy]");
+  });
+
   it("exports a complete document with already-rendered SVG", () => {
     const result = createStandaloneHtml("Plan & notes", '<svg aria-label="diagram"></svg>');
 

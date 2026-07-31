@@ -182,6 +182,44 @@
   margin: 2rem 0;
 }
 
+.markdown-body .footnote-ref {
+  font-size: 0.75em;
+  line-height: 0;
+  margin-left: 0.12em;
+}
+
+.markdown-body .footnote-ref a,
+.markdown-body .footnote-backref {
+  text-decoration: none;
+}
+
+.markdown-body .footnotes-sep {
+  margin: 2.5rem 0 1.25rem;
+}
+
+.markdown-body .footnotes {
+  color: #53615b;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.markdown-body .footnotes-list {
+  padding-left: 1.6rem;
+}
+
+.markdown-body .footnote-item {
+  scroll-margin-top: 24px;
+}
+
+.markdown-body .footnote-item p {
+  margin-bottom: 0.6rem;
+}
+
+.markdown-body .footnote-backref {
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
 .markdown-body .contains-task-list {
   list-style: none;
   padding-left: 0.2rem;

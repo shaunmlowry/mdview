@@ -2,6 +2,7 @@ import DOMPurify from "dompurify";
 import hljs from "highlight.js";
 import MarkdownIt from "markdown-it";
 import anchor from "markdown-it-anchor";
+import footnote from "markdown-it-footnote";
 import taskLists from "markdown-it-task-lists";
 import markdownStyles from "../markdown.css?inline";
 
@@ -29,6 +30,7 @@ const markdown: MarkdownIt = new MarkdownIt({
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-"),
   })
+        .use(footnote)
   .use(taskLists, { enabled: true, label: true, labelAfter: true });
 
 const defaultFence = markdown.renderer.rules.fence;
