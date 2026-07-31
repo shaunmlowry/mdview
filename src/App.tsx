@@ -3,8 +3,9 @@ import { vim } from "@replit/codemirror-vim";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openPath as openSystemPath, openUrl } from "@tauri-apps/plugin-opener";
 import CodeMirror from "@uiw/react-codemirror";
 import {
   Code2,
@@ -21,6 +22,7 @@ import {
 import { ChangeEvent, DragEvent, MouseEvent, ReactNode, useEffect, useRef, useState } from "react";
 import "./App.css";
 import MarkdownPreview, { RenderState } from "./MarkdownPreview";
+import { isMarkdownPath, resolveLocalPath } from "./lib/links";
 import { createStandaloneHtml } from "./lib/markdown";
 import "./markdown.css";
 
@@ -47,25 +49,19 @@ function App() {
   const previewRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuActionRef = useRef<(action: string) => void>(() => undefined);
-  const loadPathRef = useRef<(path: string) => void>(() => undefined);
+  const openPathRef = useRef<(path: string) => void>(() => undefined);
+  const dirtyRef = useRef(false);
   const dirty = openDocument !== null && source !== savedSource;
+  dirtyRef.current = dirty;
 
-  async function loadPath(path: string) {
-    if (dirty && !window.confirm("Discard the unsaved changes in this document?")) return;
-
-    setIsBusy(true);
+  async function openPath(path: string) {
     setNotice(null);
 
     try {
-      const nextDocument = await invoke<OpenDocument>("read_document", { path });
-      setOpenDocument(nextDocument);
-      setSource(nextDocument.contents);
-      setSavedSource(nextDocument.contents);
-      setEditorVisible(false);
+      await invoke("open_document", { path });
     } catch (error) {
       setNotice(error instanceof Error ? error.message : String(error));
     } finally {
-      setIsBusy(false);
       setIsDragging(false);
     }
   }
@@ -106,7 +102,7 @@ function App() {
       fileAccessMode: "scoped",
     });
 
-    if (typeof path === "string") await loadPath(path);
+    if (typeof path === "string") await openPath(path);
   }
 
   async function saveMarkdown() {
@@ -216,7 +212,7 @@ function App() {
   }
 
   menuActionRef.current = handleMenuAction;
-  loadPathRef.current = loadPath;
+  openPathRef.current = openPath;
 
   useEffect(() => {
     if (!isTauri()) {
@@ -238,6 +234,14 @@ function App() {
       const unlistenMenu = await listen<string>("menu-action", ({ payload }) => {
         menuActionRef.current(payload);
       });
+      const unlistenClose = await getCurrentWindow().onCloseRequested((event) => {
+        if (
+          dirtyRef.current &&
+          !window.confirm("Close this window and discard its unsaved changes?")
+        ) {
+          event.preventDefault();
+        }
+      });
       const unlistenDrop = await getCurrentWebview().onDragDropEvent((event) => {
         if (event.payload.type === "enter" || event.payload.type === "over") {
           setIsDragging(true);
@@ -245,7 +249,7 @@ function App() {
           setIsDragging(false);
         } else if (event.payload.type === "drop") {
           const [path] = event.payload.paths;
-          if (path) loadPathRef.current(path);
+          if (path) openPathRef.current(path);
           else setIsDragging(false);
         }
       });
@@ -253,10 +257,11 @@ function App() {
       if (disposed) {
         unlistenOpen();
         unlistenMenu();
+        unlistenClose();
         unlistenDrop();
         return;
       }
-      cleanups.push(unlistenOpen, unlistenMenu, unlistenDrop);
+      cleanups.push(unlistenOpen, unlistenMenu, unlistenClose, unlistenDrop);
 
       try {
         const initialDocument = await invoke<OpenDocument | null>("initial_document");
@@ -324,6 +329,21 @@ function App() {
     if (/^(https?:|mailto:)/i.test(href) && isTauri()) {
       event.preventDefault();
       void openUrl(href);
+      return;
+    }
+
+    if (!isTauri()) return;
+
+    const localPath = resolveLocalPath(href, openDocument?.path ?? null);
+    if (!localPath) return;
+
+    event.preventDefault();
+    if (isMarkdownPath(localPath)) {
+      void openPath(localPath);
+    } else {
+      void openSystemPath(localPath).catch((error) => {
+        setNotice(error instanceof Error ? error.message : String(error));
+      });
     }
   }
 

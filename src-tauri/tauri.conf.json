@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "mdview",
         "width": 1240,
         "height": 820,
