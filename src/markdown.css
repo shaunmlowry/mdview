@@ -155,6 +155,7 @@
 .markdown-body th,
 .markdown-body td {
   border: 1px solid #d9dedb;
+  overflow-wrap: break-word;
   padding: 0.48rem 0.72rem;
   text-align: left;
 }
