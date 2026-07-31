@@ -20,7 +20,8 @@ if [ ! -d "$app_path" ]; then
 fi
 
 mkdir -p "$staging_dir/Applications" "$staging_dir/usr/local/bin" "$output_dir"
-/usr/bin/ditto "$app_path" "$staging_dir/Applications/mdview.app"
+/usr/bin/ditto --norsrc --noextattr "$app_path" "$staging_dir/Applications/mdview.app"
+/usr/bin/codesign --force --deep --sign - "$staging_dir/Applications/mdview.app"
 /usr/bin/install -m 755 "$root_dir/packaging/macos/mdview" "$staging_dir/usr/local/bin/mdview"
 
 rm -f "$output_path"
